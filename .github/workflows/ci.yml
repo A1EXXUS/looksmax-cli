@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  go:
+    name: Go build & vet
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: gofmt -l . | tee /tmp/gofmt.out && test ! -s /tmp/gofmt.out
+      - run: go vet ./...
+      - run: go build ./...
+
+  python:
+    name: Python lint (ruff)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cv_worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: python3 -m py_compile face_worker.py

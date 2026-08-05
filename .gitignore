@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Go
+core/core
+core/looksmax-cli
+core/tui_out.log
+
+# Python
+cv_worker/.venv/
+cv_worker/__pycache__/
+cv_worker/.ruff_cache/
+*.pyc

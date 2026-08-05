@@ -1,0 +1,5 @@
+opencv-python>=4.9,<5
+# Закреплено на 0.10.9: начиная примерно с 0.10.10+ Google убрал legacy
+# mp.solutions API (face_mesh) из wheel'ов, оставив только новый Tasks API.
+# face_worker.py всё ещё написан под mp.solutions.face_mesh.
+mediapipe==0.10.9
