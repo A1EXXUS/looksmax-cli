@@ -697,7 +697,7 @@ def _stdout_is_terminal() -> bool:
     """
     try:
         return sys.stdout.isatty()
-    except Exception:
+    except (ValueError, OSError):
         return False
 
 
