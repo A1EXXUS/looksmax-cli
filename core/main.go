@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -21,6 +22,12 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// pythonInterpreterName matches the basename of a plausible Python
+// interpreter (python, python3, python3.11, python3.exe, ...), ignoring case
+// so a mistyped or malicious --python-path pointing at an unrelated
+// executable is rejected before we exec.Command it.
+var pythonInterpreterName = regexp.MustCompile(`(?i)^python3?(\.\d+)?(\.exe)?$`)
 
 func main() {
 	pythonPath := flag.String("python-path", "python3", "path to the Python interpreter used to run the CV worker")
@@ -45,12 +52,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	if _, err := exec.LookPath(*pythonPath); err != nil {
+	resolvedPython, err := exec.LookPath(*pythonPath)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: could not find Python interpreter %q (use --python-path to point at one)\n", *pythonPath)
 		os.Exit(1)
 	}
+	if !pythonInterpreterName.MatchString(filepath.Base(resolvedPython)) {
+		fmt.Fprintf(os.Stderr, "error: --python-path %q does not look like a Python interpreter (expected a name like python3 or python3.11)\n", *pythonPath)
+		os.Exit(1)
+	}
 
-	cmd := exec.Command(*pythonPath, workerScript, "--camera-index", strconv.Itoa(*cameraIndex))
+	if *cameraIndex < 0 {
+		fmt.Fprintf(os.Stderr, "error: --camera-index must be a non-negative integer, got %d\n", *cameraIndex)
+		os.Exit(1)
+	}
+
+	cmd := exec.Command(resolvedPython, workerScript, "--camera-index", strconv.Itoa(*cameraIndex))
 
 	// The worker watches its stdin for EOF as a signal that we've died and
 	// it should shut down (see cv_worker/face_worker.py's StdinWatcher). If
